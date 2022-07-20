@@ -10,10 +10,10 @@ do.devicecheck=1
 do.modules=0
 do.systemless=1
 do.cleanup=1
-do.cleanuponabort=0
+do.cleanuponabort=1
 device.name1=tissot
-supported.versions=9 - 12.1
-supported.patchlevels=
+supported.versions=10 - 12.1
+supported.patchlevels=2019-06-
 '; } # end properties
 
 
@@ -37,6 +37,35 @@ set_perm_recursive 0 0 750 750 $ramdisk/init* $ramdisk/sbin;
 ## AnyKernel boot install
 dump_boot;
 # begin ramdisk changes
+#sepolicy
+$bin/magiskpolicy --load sepolicy --save sepolicy \
+"allow init rootfs file execute_no_trans" \
+;
+
+# If the kernel image and dtbs are separated in the zip
+decompressed_image=/tmp/anykernel/kernel/Image
+compressed_image=$decompressed_image.gz
+if [ -f $compressed_image ]; then
+  # Hexpatch the kernel if Magisk is installed ('skip_initramfs' -> 'want_initramfs')
+  if [ -d $ramdisk/.backup -o -d $ramdisk/.magisk ]; then
+    ui_print " "; ui_print "Magisk detected! Patching kernel so reflashing Magisk is not necessary...";
+    $bin/magiskboot --decompress $compressed_image $decompressed_image;
+    $bin/magiskboot --hexpatch $decompressed_image 736B69705F696E697472616D667300 77616E745F696E697472616D667300;
+    $bin/magiskboot --compress=gzip $decompressed_image $compressed_image;
+ fi;
+ 
+  ui_print "Checking for Project Treble...";
+  if [ "$(file_getprop /system_root/system/build.prop ro.treble.enabled)" = "true" ]; then
+    ui_print "Treble Status: Supported";
+    dtb=/tmp/anykernel/dtb-treble;
+  else
+    ui_print "Treble Status: Not supported";
+    dtb=/tmp/anykernel/dtb-nontreble;
+  fi;
+
+  # Concatenate all of the dtbs to the kernel
+  cat $compressed_image $dtb/*.dtb > /tmp/anykernel/Image.gz-dtb;
+fi;
 
 write_boot;
 ## end boot install
