@@ -69,5 +69,3 @@ fi;
 
 write_boot;
 ## end boot install
-
-ui_print "Cakeby Kernel OC Installed Succesfully";
