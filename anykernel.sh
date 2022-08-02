@@ -12,7 +12,7 @@ do.systemless=1
 do.cleanup=1
 do.cleanuponabort=1
 device.name1=tissot
-supported.versions=10 - 12.1
+supported.versions=9 - 12.1
 supported.patchlevels=2019-06-
 '; } # end properties
 
